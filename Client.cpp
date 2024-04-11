@@ -65,7 +65,7 @@ private:
 
     void do_read()
     {
-        asio::async_read_until(socket_, buffer_, '%',
+        asio::async_read_until(socket_, buffer_, '\n',
             [this](const std::error_code& ec, std::size_t length)
             {
                 if (!ec)
@@ -74,8 +74,7 @@ private:
                     std::string message;
                     std::getline(stream, message, '!'); // Читаем строку из потока до символа '\n'
                     std::cout << "Received: " << message << std::endl;
-                    buffer_.consume(length); // Удаляем прочитанные данные из буфера
-                    do_write();
+                    buffer_.consume(length); // Удаляем прочитанные данные из буфера                
                     do_read();
                 }
                 else
