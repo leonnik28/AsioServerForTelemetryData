@@ -7,6 +7,9 @@
 #include <dirent.h>
 #include <vector>
 #include <sstream>
+#include <prometheus/exposer.h>
+#include <prometheus/counter.h>
+#include <prometheus/registry.h>
 #include <asio.hpp>
 #include <asio/buffer.hpp>
 #include <asio/read_until.hpp>
@@ -14,9 +17,21 @@
 class TelemetrySession : public std::enable_shared_from_this<TelemetrySession>
 {
 public:
-    TelemetrySession(asio::ip::tcp::socket socket)
-        : socket_(std::move(socket))
+TelemetrySession(asio::ip::tcp::socket socket, std::shared_ptr<prometheus::Registry> registry)
+        : socket_(std::move(socket)),
+        registry_(registry)
     {
+        auto& sent_messages_counter_family = prometheus::BuildCounter()
+            .Name("telemetry_sent_messages_total")
+            .Help("Total number of sent telemetry messages")
+            .Register(*registry_);
+        sent_messages_counter_ = &sent_messages_counter_family.Add({});
+
+        auto& errors_counter_family = prometheus::BuildCounter()
+            .Name("telemetry_errors_total")
+            .Help("Total number of telemetry errors")
+            .Register(*registry_);
+        errors_counter_ = &errors_counter_family.Add({});
     }
 
     void start()
@@ -60,10 +75,12 @@ void do_write(std::string message)
         {
             if (!ec)
             {
+                sent_messages_counter_->Increment(); // Увеличение счетчика отправленных сообщений
                 do_read();
             }
             else
             {
+                errors_counter_->Increment(); // Увеличение счетчика ошибок
                 std::cout << "ERROR" << std::endl;
             }
         });
@@ -136,6 +153,10 @@ void handle_request(std::string request)
     {
         response = generate_telemetry_data();
     }
+    else if (request == "METRICKS")
+    {
+        response = std::to_string(sent_messages_counter_->Value()) + "\n";
+    }
     else
     {
         response = updateToString("Unknown request\n");
@@ -204,15 +225,24 @@ bool changeDirectory(const std::string& directory)
 
     asio::ip::tcp::socket socket_;
     asio::streambuf buffer_;
+    std::shared_ptr<prometheus::Registry> registry_;
+    prometheus::Counter* sent_messages_counter_;
+    prometheus::Counter* errors_counter_;
 };
 
 class TelemetryServer
 {
 public:
     TelemetryServer(asio::io_service& io_service, short port)
-        : acceptor_(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port))
+        : acceptor_(io_service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)),
+        registry_(std::make_shared<prometheus::Registry>())
     {
         do_accept();
+    }
+
+    std::shared_ptr<prometheus::Registry> getRegistry()
+    {
+        return registry_;
     }
 
 private:
@@ -223,7 +253,7 @@ private:
             {
                 if (!ec)
                 {
-                    std::make_shared<TelemetrySession>(std::move(socket))->start();
+                    std::make_shared<TelemetrySession>(std::move(socket), registry_)->start();
                 }
 
                 do_accept();
@@ -231,6 +261,7 @@ private:
     }
 
     asio::ip::tcp::acceptor acceptor_;
+    std::shared_ptr<prometheus::Registry> registry_;
 };
 
 int main(int argc, char* argv[])
@@ -246,6 +277,9 @@ int main(int argc, char* argv[])
         asio::io_service io_service;
 
         TelemetryServer s(io_service, std::atoi(argv[1]));
+
+        prometheus::Exposer exposer("localhost:8080");
+        exposer.RegisterCollectable(s.getRegistry());
 
         io_service.run();
     }

@@ -5,11 +5,30 @@
 #include <string>
 #include <sstream>
 #include "Message.h"
+#include <prometheus/exposer.h>
+#include <prometheus/counter.h>
+#include <prometheus/registry.h>
 #include <asio.hpp>
 #include <asio/ip/tcp.hpp>
 #include <asio/buffer.hpp>
 #include <asio/read_until.hpp>
 #include <asio/error_code.hpp>
+
+prometheus::Registry registry;
+
+auto& sent_messages_counter_family = prometheus::BuildCounter()
+    .Name("client_sent_messages_total")
+    .Help("Total number of sent messages from the client")
+    .Register(registry);
+
+auto& sent_messages_counter = sent_messages_counter_family.Add({});
+
+auto& errors_counter_family = prometheus::BuildCounter()
+    .Name("client_errors_total")
+    .Help("Total number of errors encountered by the client")
+    .Register(registry);
+
+auto& errors_counter = errors_counter_family.Add({});
 
 class Client
 {
@@ -30,6 +49,7 @@ public:
                 do_write();
             }
         });
+        sent_messages_counter.Increment();
     }
 
     void close()
@@ -48,6 +68,10 @@ private:
                 {
                     do_connect(results);
                 }
+                else
+                {
+                    errors_counter.Increment();
+                }
             });
     }
 
@@ -59,6 +83,10 @@ private:
                 if (!ec)
                 {
                     do_read();
+                }
+                else
+                {
+                    errors_counter.Increment();
                 }
             });
     }
@@ -80,6 +108,7 @@ private:
                 else
                 {
                     socket_.close();
+                    errors_counter.Increment();
                 }
             });
     }
@@ -101,6 +130,7 @@ private:
                     else
                     {
                         socket_.close();
+                        errors_counter.Increment();
                         std::cout << "ERROR" << std::endl;
                     }
                 });
