@@ -86,22 +86,42 @@ void do_write(std::string message)
         });
 }
 
-std::string generate_telemetry_data()
-{
-    std::string telemetry_data;
+    std::string generate_telemetry_data()
+    {
+        std::string telemetry_data;
 
-    int temperature = generate_random_number(-40, 50);
-    int humidity = generate_random_number(0, 100);
-    float pressure = generate_random_number(950, 1050) + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (0.1)));
-    int wind_speed = generate_random_number(0, 20);
+        // Генерация нормально распределенных значений температуры и влажности
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::normal_distribution<> disTemperature(20, 5); // Среднее значение 20, стандартное отклонение 5
+        std::normal_distribution<> disHumidity(50, 10); // Среднее значение 50, стандартное отклонение 10
+        int temperature = static_cast<int>(std::round(disTemperature(gen)));
+        int humidity = static_cast<int>(std::round(disHumidity(gen)));
 
-    telemetry_data += "Temperature: " + std::to_string(temperature) + " C\n";
-    telemetry_data += "Humidity: " + std::to_string(humidity) + " %\n";
-    telemetry_data += "Pressure: " + std::to_string(pressure) + " mmHg\n";
-    telemetry_data += "Wind speed: " + std::to_string(wind_speed) + " m/s\n";
+        // Введение колебаний в данные
+        static bool first = true;
+        static int lastTemperature = temperature;
+        static int lastHumidity = humidity;
+        if (first) {
+            first = false;
+        } else {
+            temperature = lastTemperature + std::round(disTemperature(gen) * 0.1);
+            humidity = lastHumidity + std::round(disHumidity(gen) * 0.1);
+        }
+        lastTemperature = temperature;
+        lastHumidity = humidity;
 
-    return telemetry_data;
-}
+        // Модель изменения температуры в течение дня
+        static int hour = 0;
+        hour = (hour + 1) % 24;
+        float temperatureFactor = 1.0 + 0.2 * std::sin(2 * M_PI * hour / 24.0);
+        temperature = static_cast<int>(temperature * temperatureFactor);
+
+        telemetry_data += "Temperature: " + std::to_string(temperature) + " C\n";
+        telemetry_data += "Humidity: " + std::to_string(humidity) + " %\n";
+
+        return telemetry_data;
+    }
 
 int generate_random_number(int min, int max)
 {
