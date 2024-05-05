@@ -160,7 +160,14 @@ private:
         }
         else if (request == "INFO")
         {
-            response = "Server information ... : \n";
+            response = "Server information : \n"
+                    "QUIT - closes the connection to the client\n"
+                    "INFO - returns information about the server\n"
+                    "TELEMETRYDATA - generates and returns telemetry data (temperature and humidity)\n"
+                    "METRICS - returns the value of the \"telemetry_sent_messages_total\" metric\n"
+                    "VISUALIZE - visualizes the telemetry data from the file \"telemetry_data.txt\" using matplotlib\n"
+                    "STATISTICS - returns statistical analysis (mean and standard deviation) of the telemetry data from the file \"telemetry_data.txt\"\n"
+                    "PREDICT - predicts the next value of the telemetry data based on the data from the file \"telemetry_data.txt\" using linear regression.\n";
         }
         else if (request == "TELEMETRYDATA")
         {
