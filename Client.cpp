@@ -1,10 +1,5 @@
 #include <iostream>
-#include <thread>
 #include <deque>
-#include <array>
-#include <string>
-#include <sstream>
-#include "Message.h"
 #include <prometheus/exposer.h>
 #include <prometheus/counter.h>
 #include <prometheus/registry.h>

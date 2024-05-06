@@ -1,21 +1,11 @@
 #include <iostream>
-#include <thread>
-#include <string>
 #include <random>
-#include <functional>
-#include <unistd.h>
-#include <dirent.h>
-#include <vector>
-#include <sstream>
 #include <prometheus/exposer.h>
 #include <prometheus/counter.h>
 #include <prometheus/registry.h>
 #include <asio.hpp>
 #include <asio/buffer.hpp>
 #include <asio/read_until.hpp>
-#include <matplotlibcpp.h>
-#include <Eigen/Dense>
-#include <fstream>
 #include "TelemetryFileProcessor.h"
 
 class TelemetrySession : public std::enable_shared_from_this<TelemetrySession>
