@@ -6,7 +6,7 @@
 
 class TelemetryFileProcessor {
 public:
-    std::string VisualizeData(const std::string& filename) {
+    std::string visualizeData(const std::string& filename) {
         std::ifstream infile(filename);
         std::vector<double> x, y;
         double temp_x, temp_y;
@@ -24,7 +24,7 @@ public:
 
     }
 
-    std::string StatisticalAnalysis(const std::string& filename) {
+    std::string statisticalAnalysis(const std::string& filename) {
         std::ifstream infile(filename);
         std::vector<double> data1, data2;
         double temp1, temp2;
@@ -61,7 +61,7 @@ public:
         return result.str();
     }
 
-    std::string Predict(const std::string& filename) {
+    std::string predict(const std::string& filename) {
         std::ifstream infile(filename);
         std::vector<double> data1, data2;
         double temp1, temp2;
