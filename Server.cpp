@@ -33,17 +33,17 @@ public:
         do_read();
     }
 
-    std::string  VisualizeData() {
+    std::string  visualizeData() {
         std::string filename = "telemetry_data.txt";
         return TelemetryFileProcessor().VisualizeData(filename);
     }
 
-    std::string StatisticalAnalysis() {
+    std::string statisticalAnalysis() {
         std::string filename = "telemetry_data.txt";
         return TelemetryFileProcessor().StatisticalAnalysis(filename);
     }
 
-    std::string Predict() {
+    std::string predict() {
         std::string filename = "telemetry_data.txt";
         return TelemetryFileProcessor().Predict(filename);
     }
